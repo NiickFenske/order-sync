@@ -30,6 +30,12 @@ class SendOrderToErp implements ShouldQueue
     {
         Log::info("processing order {$this->order['id']}");
 
+        if (OrderSync::where('shopify_order_id', $this->order['id'])->exists()) {
+            Log::info("duplicate order {$this->order['id']}, skipping");
+
+            return;
+        }
+
         try {
             $sent = Http::post(config('services.erp.url'), $this->payload())->successful();
         } catch (ConnectionException $e) {
