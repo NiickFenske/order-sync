@@ -37,7 +37,15 @@ class SendOrderToErp implements ShouldQueue
         }
 
         try {
-            $sent = Http::post(config('services.erp.url'), $this->payload())->successful();
+            $response = Http::post(config('services.erp.url'), $this->payload());
+            $sent = $response->successful();
+
+            if (! $sent) {
+                Log::error("ERP rejected order {$this->order['id']}", [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
         } catch (ConnectionException $e) {
             Log::error("ERP unreachable for order {$this->order['id']}", ['error' => $e->getMessage()]);
             $sent = false;
